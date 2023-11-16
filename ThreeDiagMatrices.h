@@ -3,6 +3,7 @@
 
 #endif //DISTRIBUTEDCOMPUTING_THREEDIAGMATRICES_H
 #include "vector"
+using namespace std;
 
 /**
     Метод прогонки (англ. tridiagonal matrix algorithm)
@@ -34,3 +35,9 @@ std::vector<double> CycleReductionAlgorithm(std::vector<double> a,
                                             std::vector<double> c,
                                             std::vector<double> f,
                                             int n);
+
+vector<double> ParallelCycleReductionAlgorithm(const vector<double>& a,
+                                               const vector<double>& b,
+                                               const vector<double>& c,
+                                               const vector<double>& f,
+                                               int n);

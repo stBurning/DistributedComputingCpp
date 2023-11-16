@@ -2,8 +2,12 @@
 #include <iostream>
 #include <numbers>
 #include <vector>
+#include <omp.h>
 #include "ThreeDiagMatrices.h"
+#include <chrono>
 
+
+using namespace std;
 
 double q(double x){
     return sin(x);
@@ -33,9 +37,17 @@ std::vector<double> build_nodes(double a, double b, int n){
     return x;
 }
 
+//int main(){
+//
+//    return 0;
+//}
+
+
 int main(){
     // Начальные условия
-    int N = 64;                       // Число разбиений отрезка
+
+    int N = 1024*1024*2;                       // Число разбиений отрезка
+    cout << N << endl;
     auto a = 0;                       // Левый край отрезка
     auto b = std::numbers::pi; // Правый край отрезка
     auto h = (b - a) / N;      // Размер шага
@@ -43,17 +55,6 @@ int main(){
     std::cout << "[a, b] = [" << a << "; " << b <<"]" << std::endl;
 
     auto x = build_nodes(a, b, N);
-    std::cout << "x: ";
-    for (int i = 0; i < N; i++){
-        std::cout << x[i] << ", ";
-    }
-    std::cout<<x[N]<<std::endl;
-
-    std::cout << "u(x): ";
-    for (int i = 0; i < N; i++){
-        std::cout << u(x[i]) << ", ";
-    }
-    std::cout<<u(x[N])<<std::endl;
 
     // Преобразование задачи
     std::vector<double> lower_diag(N+1);  // -a_i
@@ -75,26 +76,31 @@ int main(){
         middle_diag[i] = 2 + h*h*q(x[i]);   // b_i = 2 + h^2 * q(x_i)
         f_values[i] = h*h*f(x[i]);          // h^2 * f(x_i)
     }
-
+    // Метод прогонки
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     auto w_ = ThomasAlgorithm(lower_diag,
                                             middle_diag,
                                             upper_diag,
                                             f_values, N);
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto ta_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    std::cout << "[ThomasAlgorithm] Time difference = " << ta_time << "[ms]" << std::endl;
 
-    std::cout << "Baseline:  ";
-    for (int i = 0; i <= N; i++) {
-        std::cout << w_[i] << " " << u(x[i]) << "\n";
-    }
-
-    auto u_ = CycleReductionAlgorithm(lower_diag,
+    // Метод циклической редукции
+    std::chrono::steady_clock::time_point begin_cr = std::chrono::steady_clock::now();
+    auto u_ = ParallelCycleReductionAlgorithm(lower_diag,
                                                     middle_diag,
                                                     upper_diag,
                                                     f_values, N);
+    std::chrono::steady_clock::time_point end_cr = std::chrono::steady_clock::now();
+    auto cr_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_cr - begin_cr).count();
+    std::cout << "[CycleReductionAlgorithm] Time difference = " << cr_time << "[ms]" << std::endl;
 
-    std::cout << "Cycle Reduction:  ";
-    for (int i = 0; i <= N; i++) {
-        std::cout << u_[i] << " " << u(x[i]) << "\n";
-    }
+    std::cout << "Ratio: " << (float)cr_time / (float)ta_time << std::endl;
+//    std::cout << "Cycle Reduction:";
+//    for (int i = 0; i <= N; i++) {
+//        std::cout << u_[i] << " " << u(x[i]) << "\n";
+//    }
 
     return 0;
 }
