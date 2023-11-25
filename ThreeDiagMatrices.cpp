@@ -7,11 +7,11 @@
 using namespace std;
 
 
-double* ThomasAlgorithm(const double *a,
-                        const double *b,
-                        const double *c,
-                        const double *f,
-                        int n){
+double* BaseAlgorithm(const double *a,
+                      const double *b,
+                      const double *c,
+                      const double *f,
+                      int n){
 
     auto P = new double[n];
     auto Q = new double[n];
@@ -24,9 +24,7 @@ double* ThomasAlgorithm(const double *a,
         P[i] = c[i]/(b[i] - a[i]*P[i-1]);
         Q[i] = (f[i] + a[i]*Q[i-1])/(b[i]-a[i]*P[i-1]);
     }
-
     x[n] = (f[n] + a[n]*Q[n-1])/(b[n]-a[n]*P[n-1]);
-
     for (int i = n-1; i >= 0; i--){
         x[i] = P[i]*x[i+1] + Q[i];
     }
@@ -133,64 +131,50 @@ double* CycleReduction(const double *a,
     x[0] = f[0];
     x[n] = f[n];
 
-    auto  aBuffer = new double*[q];
-    auto  bBuffer = new double*[q];
-    auto  cBuffer = new double*[q];
-    auto  fBuffer = new double*[q];
-
-    for (int i = 0; i < q; i++){
-        aBuffer[i] = new double [n+1];
-        bBuffer[i] = new double [n+1];
-        cBuffer[i] = new double [n+1];
-        fBuffer[i] = new double [n+1];
-    }
+    auto  a_ = new double[n+1];
+    auto  b_ = new double[n+1];
+    auto  c_ = new double[n+1];
+    auto  f_ = new double[n+1];
 
     for (int i = 0; i <= n; i++){
-        aBuffer[0][i] = a[i];
-        bBuffer[0][i] = b[i];
-        cBuffer[0][i] = c[i];
-        fBuffer[0][i] = f[i];
+        a_[i] = a[i];
+        b_[i] = b[i];
+        c_[i] = c[i];
+        f_[i] = f[i];
     }
 
     int size = 1;
 
-
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int k = 1; k < q; k++) {
         int shift = size;
         size *= 2;
 
         int id_l, id_r;
         double P, Q;
-        auto a_k = aBuffer[k-1];
-        auto b_k = bBuffer[k-1];
-        auto c_k = cBuffer[k-1];
-        auto f_k = fBuffer[k-1];
 
-        # pragma omp parallel for num_threads(num_workers) schedule(static) shared(aBuffer, bBuffer, cBuffer, fBuffer, a_k, b_k, c_k, f_k) private(id_l, id_r, P, Q)
+        # pragma omp parallel for num_threads(num_workers) schedule(static) shared(a_, b_, c_, f_) private(id_l, id_r, P, Q)
         for (int i = size; i <= n-size; i += size){
             id_l = i - shift;
             id_r = i + shift;
 
-            P = a_k[i] / b_k[id_l];
-            Q = c_k[i] / b_k[id_r];
+            P = a_[i] / b_[id_l];
+            Q = c_[i] / b_[id_r];
 
-            aBuffer[k][i] = P * a_k[id_l];
-            bBuffer[k][i] = b_k[i] - P * c_k[id_l] - Q * a_k[id_r];
-            cBuffer[k][i] = Q * c_k[i + shift];
-            fBuffer[k][i] = f_k[i] + P * f_k[id_l] + Q * f_k[id_r];
+            a_[i] = P * a_[id_l];
+            b_[i] = b_[i] - P * c_[id_l] - Q * a_[id_r];
+            c_[i] = Q * c_[id_r];
+            f_[i] = f_[i] + P * f_[id_l] + Q * f_[id_r];
         }
     }
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-    std::cout << "[CycleReductionAlgorithm] Forward step is done = " << time << "[ms]" << std::endl;
 
     for (int k = q; k > 0; k--) {
-        # pragma omp parallel for num_threads(num_workers) schedule(static)
+        # pragma omp parallel for num_threads(num_workers) schedule(static) shared(a_, b_, c_, f_)
         for (int i = size; i <= n-size; i += size*2){
-            x[i] = (fBuffer[k - 1][i] + aBuffer[k - 1][i] * x[i - size] + cBuffer[k - 1][i] * x[i + size]) / bBuffer[k - 1][i];
+            x[i] = (f_[i] + a_[i] * x[i - size] + c_[i] * x[i + size]) / b_[i];
         }
         size /= 2;
     }
+
+
     return x;
 }

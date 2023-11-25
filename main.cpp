@@ -72,7 +72,7 @@ double mae(const double* x, const double* y, int n){
 int main(){
     // Начальные условия
 
-    int N = 1024*1024*2;                 // Число разбиений отрезка
+    int N = 1024*1024*32;                 // Число разбиений отрезка
     cout << "N: " << N << endl;
     auto a = 0;                        // Левый край отрезка
     auto b = std::numbers::pi; // Правый край отрезка
@@ -81,6 +81,7 @@ int main(){
     std::cout << "[a, b] = [" << a << "; " << b <<"]" << std::endl;
 
     auto x = build_nodes(a, b, N);
+
 
     // Фактические значения
     auto y = new double[N+1];
@@ -111,21 +112,21 @@ int main(){
 
     // Метод прогонки
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    auto w_ = ThomasAlgorithm(lower_diag,
-                                        middle_diag,
-                                        upper_diag,
-                                        f_values, N);
+    auto w_ = BaseAlgorithm(lower_diag,
+                            middle_diag,
+                            upper_diag,
+                            f_values, N);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     auto ta_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-    std::cout << "[ThomasAlgorithm] Time difference = " << ta_time << "[ms]" << std::endl;
-    std::cout << "[ThomasAlgorithm] MAE:" << mae(y, w_, N+1) << endl;
+    std::cout << "[BaseAlgorithm] Time difference = " << ta_time << "[ms]" << std::endl;
+    std::cout << "[BaseAlgorithm] MAE:" << mae(y, w_, N+1) << endl;
 
     // Метод циклической редукции
     std::chrono::steady_clock::time_point begin_cr_ = std::chrono::steady_clock::now();
     auto u_ = CycleReduction(lower_diag,
                              middle_diag,
                              upper_diag,
-                             f_values, N, 8);
+                             f_values, N, 4);
     std::chrono::steady_clock::time_point end_cr_ = std::chrono::steady_clock::now();
     auto cr_time_ = std::chrono::duration_cast<std::chrono::milliseconds>(end_cr_ - begin_cr_).count();
     std::cout << "[CycleReductionAlgorithm] Time difference = " << cr_time_ << "[ms]" << std::endl;

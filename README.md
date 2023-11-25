@@ -7,7 +7,7 @@
 ## Методы решения
 Метод прогонки 
 ```c++
-std::vector<double> ThomasAlgorithm();
+std::vector<double> BaseAlgorithm();
 ```
 Метод циклической редукции
 ```c++

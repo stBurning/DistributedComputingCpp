@@ -34,11 +34,11 @@ std::vector<double> ThomasAlgorithm(std::vector<double> a,
     @param n - кол-во неизвестных
     @return x - решение уравнения
  */
-double* ThomasAlgorithm(const double *a,
-                        const double *b,
-                        const double *c,
-                        const double *f,
-                        int n);
+double* BaseAlgorithm(const double *a,
+                      const double *b,
+                      const double *c,
+                      const double *f,
+                      int n);
 
 /**
     Метод циклической редукции
