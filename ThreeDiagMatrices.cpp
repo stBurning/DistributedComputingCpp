@@ -31,7 +31,7 @@ double* BaseAlgorithm(const double *a,
     return x;
 }
 
-vector<double> ThomasAlgorithm(vector<double> a,
+vector<double> BaseAlgorithm(vector<double> a,
                                vector<double> b,
                                vector<double> c,
                                vector<double> f,
@@ -168,7 +168,7 @@ double* CycleReduction(const double *a,
     }
 
     for (int k = q; k > 0; k--) {
-        # pragma omp parallel for num_threads(num_workers) schedule(static) shared(a_, b_, c_, f_)
+        //# pragma omp parallel for num_threads(num_workers) schedule(static) shared(a_, b_, c_, f_)
         for (int i = size; i <= n-size; i += size*2){
             x[i] = (f_[i] + a_[i] * x[i - size] + c_[i] * x[i + size]) / b_[i];
         }

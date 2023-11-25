@@ -17,7 +17,7 @@ using namespace std;
     @param n - кол-во неизвестных
     @return x - решение уравнения
  */
-std::vector<double> ThomasAlgorithm(std::vector<double> a,
+std::vector<double> BaseAlgorithm(std::vector<double> a,
                                     std::vector<double> b,
                                     std::vector<double> c,
                                     std::vector<double> f,

@@ -72,7 +72,7 @@ double mae(const double* x, const double* y, int n){
 int main(){
     // Начальные условия
 
-    int N = 1024*1024*32;                 // Число разбиений отрезка
+    int N = 1024*1024;                 // Число разбиений отрезка
     cout << "N: " << N << endl;
     auto a = 0;                        // Левый край отрезка
     auto b = std::numbers::pi; // Правый край отрезка
