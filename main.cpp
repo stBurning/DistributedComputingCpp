@@ -5,6 +5,7 @@
 #include <omp.h>
 #include "ThreeDiagMatrices.h"
 #include <chrono>
+#include <thread>
 
 
 using namespace std;
@@ -21,6 +22,9 @@ double f(double x){
 double u(double x){
     return sin(3*x);
 }
+
+
+
 /** Split range on points
  * @param a left range border
  * @param b right range border
@@ -71,17 +75,16 @@ double mae(const double* x, const double* y, int n){
 
 int main(){
     // Начальные условия
+    int N = 1024*1024*32;                 // Число разбиений отрезка
 
-    int N = 1024*1024;                 // Число разбиений отрезка
     cout << "N: " << N << endl;
     auto a = 0;                        // Левый край отрезка
     auto b = std::numbers::pi; // Правый край отрезка
-    auto h = (b - a) / N;      // Размер шага
+    double h = double(b - a) / N;      // Размер шага
 
     std::cout << "[a, b] = [" << a << "; " << b <<"]" << std::endl;
 
     auto x = build_nodes(a, b, N);
-
 
     // Фактические значения
     auto y = new double[N+1];
@@ -110,6 +113,29 @@ int main(){
         f_values[i] = h*h*f(x[i]);          // h^2 * f(x_i)
     }
 
+    // Метод циклической редукции
+    std::chrono::steady_clock::time_point begin_cr_2 = std::chrono::steady_clock::now();
+    auto u_2 = CycleReduction(lower_diag,
+                             middle_diag,
+                             upper_diag,
+                             f_values, N, 2);
+    std::chrono::steady_clock::time_point end_cr_2 = std::chrono::steady_clock::now();
+    auto cr_time_2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_cr_2 - begin_cr_2).count();
+    std::cout << "[CycleReductionAlgorithm] Time difference = " << cr_time_2 << "[ns]" << std::endl;
+    std::cout << "[CycleReductionAlgorithm] MAE:" << mae(y, u_2, N+1) << endl;
+
+    // Метод циклической редукции
+    std::chrono::steady_clock::time_point begin_cr_4 = std::chrono::steady_clock::now();
+    auto u_4 = CycleReduction(lower_diag,
+                             middle_diag,
+                             upper_diag,
+                             f_values, N, 4);
+    std::chrono::steady_clock::time_point end_cr_4 = std::chrono::steady_clock::now();
+    auto cr_time_4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_cr_4 - begin_cr_4).count();
+    std::cout << "[CycleReductionAlgorithm] Time difference = " << cr_time_4 << "[ns]" << std::endl;
+    std::cout << "[CycleReductionAlgorithm] MAE:" << mae(y, u_4, N+1) << endl;
+
+
     // Метод прогонки
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     auto w_ = BaseAlgorithm(lower_diag,
@@ -117,26 +143,21 @@ int main(){
                             upper_diag,
                             f_values, N);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    auto ta_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-    std::cout << "[BaseAlgorithm] Time difference = " << ta_time << "[ms]" << std::endl;
+    auto ta_time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count();
+    std::cout << "[BaseAlgorithm] Time difference = " << ta_time << "[ns]" << std::endl;
     std::cout << "[BaseAlgorithm] MAE:" << mae(y, w_, N+1) << endl;
 
-    // Метод циклической редукции
-    std::chrono::steady_clock::time_point begin_cr_ = std::chrono::steady_clock::now();
-    auto u_ = CycleReduction(lower_diag,
-                             middle_diag,
-                             upper_diag,
-                             f_values, N, 4);
-    std::chrono::steady_clock::time_point end_cr_ = std::chrono::steady_clock::now();
-    auto cr_time_ = std::chrono::duration_cast<std::chrono::milliseconds>(end_cr_ - begin_cr_).count();
-    std::cout << "[CycleReductionAlgorithm] Time difference = " << cr_time_ << "[ms]" << std::endl;
-    std::cout << "[CycleReductionAlgorithm] MAE:" << mae(y, u_, N+1) << endl;
-    std::cout << "Ratio: " << (float)cr_time_ / (float)ta_time << std::endl;
+    std::cout << "[BaseAlgorithm] Time difference = " << ta_time << "[ns]" << std::endl;
+    std::cout << "MAE2:" << mae(w_, u_2, N+1) << endl;
+    std::cout << "[T2] Time difference = " << cr_time_2 << "[ns]" << std::endl;
+    std::cout << "Ratio2: " << (float)ta_time / (float)cr_time_2 << std::endl;
 
+    std::cout << "MAE4:" << mae(w_, u_2, N+1) << endl;
+    std::cout << "[T4] Time difference = " << cr_time_4 << "[ns]" << std::endl;
+    std::cout << "Ratio4: " << (float)ta_time / (float)cr_time_4 << std::endl;
 //    std::cout << "Cycle Reduction:";
 //    for (int i = 0; i <= N; i++) {
 //        std::cout << u_[i] << " " << u(x[i]) << "\n";
 //    }
-
     return 0;
 }

@@ -166,15 +166,12 @@ double* CycleReduction(const double *a,
             f_[i] = f_[i] + P * f_[id_l] + Q * f_[id_r];
         }
     }
-
     for (int k = q; k > 0; k--) {
-        //# pragma omp parallel for num_threads(num_workers) schedule(static) shared(a_, b_, c_, f_)
+        # pragma omp parallel for num_threads(num_workers) schedule(static) shared(a_, b_, c_, f_)
         for (int i = size; i <= n-size; i += size*2){
             x[i] = (f_[i] + a_[i] * x[i - size] + c_[i] * x[i + size]) / b_[i];
         }
         size /= 2;
     }
-
-
     return x;
 }
